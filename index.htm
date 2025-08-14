@@ -1,0 +1,69 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบจัดการตารางเข้างาน (เวอร์ชันจริง)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getDatabase, ref, set, get, update, push } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+
+// Firebase Config (from user)
+const firebaseConfig = {
+  apiKey: "AIzaSyAfsgjn1b_9M3C9Z-wlgqpXl05B5YJY6QM",
+  authDomain: "database-rrlf168.firebaseapp.com",
+  databaseURL: "https://database-rrlf168-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "database-rrlf168",
+  storageBucket: "database-rrlf168.firebasestorage.app",
+  messagingSenderId: "335830135364",
+  appId: "1:335830135364:web:23010e715e18a474d60211",
+  measurementId: "G-GXSHZRX7D1"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const storage = getStorage(app);
+
+// Example: Function to upload file to Firebase Storage and store metadata in Realtime DB
+async function uploadDocument(file, employeeId) {
+    const storageRef = sRef(storage, `documents/${employeeId}/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
+    console.log("Uploaded file available at:", downloadURL);
+    return downloadURL;
+}
+
+// Example: Save leave request with document
+async function submitLeaveRequest() {
+    const fileInput = document.getElementById('documentFile');
+    let documentURL = "";
+    if(fileInput.files.length > 0){
+        documentURL = await uploadDocument(fileInput.files[0], "EMP001");
+    }
+    const leaveRequest = {
+        employeeId: "EMP001",
+        employeeName: "พนักงานทดสอบ",
+        leaveType: "ลาป่วย",
+        startDate: "2025-08-20",
+        endDate: "2025-08-21",
+        reason: "เหตุผลทดสอบ",
+        documentURL: documentURL,
+        status: "pending"
+    };
+    await push(ref(db, 'leaveRequests'), leaveRequest);
+    alert("บันทึกคำขอลาเรียบร้อย");
+}
+window.submitLeaveRequest = submitLeaveRequest;
+</script>
+</head>
+<body class="p-6">
+<h1 class="text-2xl font-bold mb-4">ทดสอบบันทึกคำขอลา (Firebase จริง)</h1>
+<input type="file" id="documentFile" class="mb-4 block">
+<button onclick="submitLeaveRequest()" class="px-4 py-2 bg-blue-500 text-white rounded">ส่งคำขอลา</button>
+</body>
+</html>
